@@ -61,6 +61,19 @@ launch_concourse() {
 	( cd "$DIR"/concourse && docker-compose up -d )
 }
 
+config_fly() {
+	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
+	local concourse_url=http://$concourse_host
+	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
+		"$DIR"/templates/fly/entrypoint.sh > "$DIR"/fly/entrypoint.sh
+}
+
+launch_fly() {
+	docker build -t alpine-fly "$DIR"/fly
+    dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
+    docker run -it --rm --dns=$dns_server_ip alpine-fly
+}
+
 
 main() {
 	check_docker_machine
@@ -74,6 +87,8 @@ main() {
 	launch_traefik
 	config_concourse
 	launch_concourse
+	config_fly
+	launch_fly
 
 	echo 'Bootstrap ended'
 	echo "Please now use $machine_ip as nameserver and try to connect to:"
