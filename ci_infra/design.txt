@@ -1,0 +1,48 @@
+Interesting meeting:
+https://fr.slideshare.net/XebiaFrance/devoxx-17-orchestration-de-conteneurs-le-choix-des-armes
+https://www.youtube.com/watch?v=UhrIOMuA3_w
+
+Xebia subject:
+continuous delivery / deployment
+
+basic process:
+- master branch = to be deployed
+- validation = manual
+- CI/CD tool = concourse
+- staging = Docker container for staging
+- production = Docker container for production
+
+git master release
+=> build Docker image
+=> deploy latest image to staging (tag image as staging and docker pull)
+ => rollback to previous?
+=> deploy staging image to production (tag image as production and docker pull)
+
+traefik for proxy
+
+later:
+- integration testing (selenium)
+- concourse: add permissions and login (teams)
+- concourse: add notification (mail / slack...)
+- load balancing (service)
+- use docker secrets
+
+auto deployment in docker machine:
+- install traefik + dns?
+- install concourse
+- deploy concourse scenar
+- initial build to staging + run staging
+
+
+URL examples:
+staging.click-count.xebia-test
+click-count.xebia-test
+concourse.xebia-test
+...
+
+network:
+1) traefik front (web frontal proxy)
+2) traefik back (any service that could be served by traefik)
+3) concourse
+...?
+
