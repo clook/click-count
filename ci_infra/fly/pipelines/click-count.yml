@@ -1,0 +1,21 @@
+---
+resources:
+- name: click-count-repo
+  type: git
+  source:
+    url: https://github.com/xebia-france/click-count.git
+
+jobs:
+- name: build-war
+  public: true
+  plan:
+  - get: click-count-repo
+  - task: build-war
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: "maven:3"}
+      run:
+        path: mvn
+        args: ["clean", "package"]
