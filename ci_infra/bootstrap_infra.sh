@@ -4,6 +4,7 @@ set -e
 
 MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
+CONCOURSE_PREFIX=concourse
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -38,36 +39,26 @@ create_machine() {
 launch_dnsmasq() {
 	local machine_ip=$1
 
-	docker run -d -p 53:53/tcp -p 53:53/udp --cap-add=NET_ADMIN andyshinn/dnsmasq:2.76 -A /$DOMAIN_NAME/$machine_ip
+	docker run -d -p 53:53/tcp -p 53:53/udp --cap-add=NET_ADMIN --name dnsmasq andyshinn/dnsmasq:2.76 -A /$DOMAIN_NAME/$machine_ip
 }
 
 launch_traefik() {
 	docker-compose -f "$DIR"/traefik/docker-compose.yml up -d
 }
 
-config_whoami() {
-	mkdir -p "$DIR"/whoami
-	cat > "$DIR"/whoami/docker-compose.yml << EOF
-version: '2'
+config_concourse() {
+	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
+	local concourse_url=http://$concourse_host
+	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
+		"$DIR"/templates/concourse/docker-compose.yml > "$DIR"/concourse/docker-compose.yml
 
-services:
-  whoami:
-    image: emilevauge/whoami
-    networks:
-      - web
-    labels:
-      - "traefik.backend=whoami"
-      - "traefik.frontend.rule=Host:whoami.$DOMAIN_NAME"
-
-networks:
-  web:
-    external:
-      name: traefik_webgateway
-EOF
+	docker volume create --name concourse-db
+	docker volume create --name concourse-web-keys
+	docker volume create --name concourse-worker-keys
 }
 
-launch_whoami() {
-	docker-compose -f "$DIR"/whoami/docker-compose.yml up -d --scale whoami=2
+launch_concourse() {
+	( cd "$DIR"/concourse && docker-compose up -d )
 }
 
 
@@ -81,12 +72,12 @@ main() {
 
 	launch_dnsmasq $machine_ip
 	launch_traefik
-	config_whoami
-	launch_whoami
+	config_concourse
+	launch_concourse
 
 	echo 'Bootstrap ended'
 	echo "Please now use $machine_ip as nameserver and try to connect to:"
-	echo "- http://whoami.$DOMAIN_NAME for whoami"
+	echo "- http://concourse.$DOMAIN_NAME for concourse"
 	echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 	echo
 	echo 'You can stop and remove everything by cleaning your resolver and'
