@@ -5,6 +5,7 @@ set -e
 MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
+REGISTRY_PREFIX=registry
 MACHINE_IP=192.168.33.10
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -63,6 +64,25 @@ launch_concourse() {
 	( cd "$DIR"/concourse && docker-compose up -d )
 }
 
+config_registry() {
+	local registry_host=$REGISTRY_PREFIX.$DOMAIN_NAME
+
+	mkdir -p "$DIR"/registry
+	sed "s@%REGISTRY_HOST%@${registry_host}@" \
+		"$DIR"/templates/registry/docker-compose.yml > "$DIR"/registry/docker-compose.yml
+}
+
+launch_registry() {
+	docker-compose -f "$DIR"/registry/docker-compose.yml up -d
+}
+
+launch_fly() {
+	docker build -t alpine-fly "$DIR"/fly
+	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
+	dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
+	docker run -it --rm --dns=$dns_server_ip alpine-fly
+}
+
 config_fly() {
 	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
 	local concourse_url=http://$concourse_host
@@ -88,12 +108,15 @@ main() {
 		launch_traefik
 		config_concourse
 		launch_concourse
+		config_registry
+		launch_registry
 		config_fly
 		launch_fly
 
 		echo 'Bootstrap ended'
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
-		echo "- http://concourse.$DOMAIN_NAME for concourse"
+		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse"
+		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 		echo
 		echo 'You can stop and remove everything by cleaning your resolver and'
