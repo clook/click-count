@@ -43,13 +43,15 @@ services:
     volumes: ['worker-keys:/concourse-keys']
     networks:
         - concourse
+          # access to DNS resolver
+        - back
     environment:
       CONCOURSE_TSA_HOST: concourse-web
       CONCOURSE_GARDEN_ADDRESS: concourse-worker
       CONCOURSE_BAGGAGECLAIM_ADDRESS: concourse-worker
       CONCOURSE_GARDEN_FORWARD_ADDRESS: concourse-worker
       CONCOURSE_BAGGAGECLAIM_FORWARD_ADDRESS: concourse-worker
-      CONCOURSE_GARDEN_DNS_SERVER: 8.8.8.8
+      CONCOURSE_GARDEN_DNS_SERVER: %DNS_SERVER_IP%
     restart: on-failure:10
 
   keys:
@@ -67,4 +69,7 @@ networks:
   web:
     external:
       name: traefik_webgateway
+  back:
+    external:
+      name: dnsmasq_back
   concourse:
