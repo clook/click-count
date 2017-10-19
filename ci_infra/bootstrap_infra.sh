@@ -5,35 +5,37 @@ set -e
 MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
+MACHINE_IP=192.168.33.10
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VAGRANT_CWD="$DIR"
 
-# check for docker-machine binary and sanity check or die
-check_docker_machine() {
+# check for variant binary and sanity check or die
+check_vagrant() {
 	local err=0
 
-	docker-machine &> /dev/null || err=$?
+	vagrant -h &> /dev/null || err=$?
 	if [ "$err" == 127 ]; then
-		echo 'This script needs docker-machine installed'
+		echo 'This script needs vagrant installed'
 		exit 2
 	elif [ "$err" != 0 ]; then
-		echo 'docker-machine unknown error, please check'
+		echo 'vagrant unknown error, please check'
 		exit 3
 	fi
 }
 
-# check the machine $MACHINE_NAME does not exist or die
+# check the machine does not exist or die
 check_machine_absent() {
-	if docker-machine status $MACHINE_NAME &> /dev/null; then
-		echo 'docker-machine already exist, please verify and delete it first.'
-		echo "Tip: docker-machine rm $MACHINE_NAME"
+	if ! vagrant 2>/dev/null status default | grep default | grep -q 'not created'; then
+		echo 'Vagrant machine already exist, please verify and delete it first.'
+		echo "Tip: vagrant destroy"
 		exit 4
 	fi
 }
 
 # create the docker-machine
 create_machine() {
-	docker-machine create --driver virtualbox $MACHINE_NAME
+	vagrant up
 }
 
 launch_dnsmasq() {
@@ -70,34 +72,40 @@ config_fly() {
 
 launch_fly() {
 	docker build -t alpine-fly "$DIR"/fly
-    dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
-    docker run -it --rm --dns=$dns_server_ip alpine-fly
+	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
+	dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
+	docker run -it --rm --dns=$dns_server_ip alpine-fly
 }
 
 
 main() {
-	check_docker_machine
-	check_machine_absent
-	create_machine
+	local bootstrap_type=$1
 
-	local machine_ip=$(docker-machine ip $MACHINE_NAME)
-	eval $(docker-machine env $MACHINE_NAME)
+	if [ "$bootstrap_type" == 'inside' ]; then
+		local machine_ip=$MACHINE_IP
 
-	launch_dnsmasq $machine_ip
-	launch_traefik
-	config_concourse
-	launch_concourse
-	config_fly
-	launch_fly
+		launch_dnsmasq $machine_ip
+		launch_traefik
+		config_concourse
+		launch_concourse
+		config_fly
+		launch_fly
 
-	echo 'Bootstrap ended'
-	echo "Please now use $machine_ip as nameserver and try to connect to:"
-	echo "- http://concourse.$DOMAIN_NAME for concourse"
-	echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
-	echo
-	echo 'You can stop and remove everything by cleaning your resolver and'
-	echo "issuing docker-machine rm $MACHINE_NAME"
-	echo
+		echo 'Bootstrap ended'
+		echo "Please now use $machine_ip as nameserver and try to connect to:"
+		echo "- http://concourse.$DOMAIN_NAME for concourse"
+		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
+		echo
+		echo 'You can stop and remove everything by cleaning your resolver and'
+		echo "issuing docker-machine rm $MACHINE_NAME"
+		echo
+	else
+		# bootstrap vagrant
+		check_vagrant
+		check_machine_absent
+		create_machine
+		vagrant ssh -c '/vagrant/bootstrap_infra.sh inside'
+	fi
 }
 
-main
+main "$@"

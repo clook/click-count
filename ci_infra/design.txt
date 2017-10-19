@@ -46,3 +46,30 @@ network:
 3) concourse
 ...?
 
+traefik + concourse issues:
+- redirect to another port than 8080 => label traefik.port=8080
+- force docker network if multiple network tiers: label traefik.docker.network=traefik_webgateway
+
+
+TODO next
+- container to describe the pipeline: download fly / use it with a pipeline files
+
+TODO later
+- set up a Docker registry
+- exec all the setting-up script in a container for portability
+
+
+setup container for fly:
+- based on alpine with curl
+- dns = docker-machine ip => does not work...
+
+
+concourse worker issue:
+runc create: exit status 1: container_linux.go:264: starting container process caused "process_linux.go:339: container init caused \"rootfs_linux.go:57: mounting \\\"/worker-state/3.5.0/assets/bin/init\\\" to rootfs \\\"/worker-state/volumes/live/495f1478-572d-431a-4374-03410491415c/volume/rootfs\\\" at \\\"/worker-state/volumes/live/495f1478-572d-431a-4374-03410491415c/volume/rootfs/tmp/garden-init\\\" caused \\\"open /worker-state/volumes/live/495f1478-572d-431a-4374-03410491415c/volume/rootfs/tmp/garden-init: permission denied\\\"\""
+
+see https://github.com/concourse/concourse/issues/1230
+
+
+docker-machine is buggy (sometimes, the VM is not responsive)
+Don't know if it comes from virtualbox => try Vagrant with docker / docker-compose provisionning from Debian 9.1 (kernel > 4.8)
+
