@@ -3,7 +3,7 @@ resources:
 - name: click-count-repo
   type: git
   source:
-    url: https://github.com/xebia-france/click-count.git
+    uri: https://github.com/xebia-france/click-count.git
 
 jobs:
 - name: build-war
@@ -15,7 +15,12 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: "maven:3"}
+        source:
+          repository: "maven"
+          tag: 3
+      inputs:
+        - name: click-count-repo
       run:
+        dir: click-count-repo
         path: mvn
         args: ["clean", "package"]
