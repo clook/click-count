@@ -5,6 +5,12 @@ resources:
   source:
     uri: https://github.com/clook/click-count.git
 
+- name: click-count-image
+  type: docker-image
+  source:
+    repository: registry.xebia-test/click-count
+    insecure_registries: ["registry.xebia-test/click-count"]
+
 jobs:
 - name: build-war
   public: true
@@ -20,7 +26,14 @@ jobs:
           tag: 3
       inputs:
         - name: click-count-repo
+      outputs:
+        - name: click-count-war
       run:
         dir: click-count-repo
-        path: mvn
-        args: ["clean", "package"]
+        path: sh
+        args:
+          - -c
+          - "mvn clean package && mv target Dockerfile ../click-count-war/"
+  - put: click-count-image
+    params:
+      build: click-count-war
