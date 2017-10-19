@@ -4,3 +4,4 @@ target/
 ci_infra/.vagrant
 ci_infra/concourse/docker-compose.yml
 ci_infra/fly/entrypoint.sh
+ci_infra/registry/docker-compose.yml

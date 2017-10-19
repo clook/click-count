@@ -1,0 +1,16 @@
+version: '2'
+services:
+  registry:
+    restart: always
+    image: registry:2
+    labels:
+      - "traefik.backend=registry"
+      - "traefik.port=5000"
+      - "traefik.frontend.rule=Host:%REGISTRY_HOST%"
+    networks:
+      - web
+
+networks:
+  web:
+    external:
+      name: traefik_webgateway
