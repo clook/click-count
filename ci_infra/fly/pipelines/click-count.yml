@@ -3,7 +3,7 @@ resources:
 - name: click-count-repo
   type: git
   source:
-    uri: https://github.com/xebia-france/click-count.git
+    uri: https://github.com/clook/click-count.git
 
 jobs:
 - name: build-war
