@@ -1,3 +1,6 @@
 .idea/
 target/
 *.iml
+ci_infra/.vagrant
+ci_infra/concourse/docker-compose.yml
+ci_infra/fly/entrypoint.sh
