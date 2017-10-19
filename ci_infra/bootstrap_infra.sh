@@ -34,7 +34,7 @@ check_machine_absent() {
 	fi
 }
 
-# create the docker-machine
+# create the Vagrant VM
 create_machine() {
 	vagrant up
 }
@@ -120,7 +120,7 @@ main() {
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 		echo
 		echo 'You can stop and remove everything by cleaning your resolver and'
-		echo "issuing docker-machine rm $MACHINE_NAME"
+		echo "issuing vagrant destroy in the directory $DIR"
 		echo
 	else
 		# bootstrap vagrant
