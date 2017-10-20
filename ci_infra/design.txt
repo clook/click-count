@@ -76,5 +76,4 @@ Don't know if it comes from virtualbox => try Vagrant with docker / docker-compo
 => DONE
 
 
-
-
+Bug with Concourse worker: DNS should point to dnsmasq to resolve the registry IP: WIP, branch fix/concourse_dns_registry

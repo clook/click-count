@@ -8,8 +8,8 @@ resources:
 - name: click-count-image
   type: docker-image
   source:
-    repository: registry.xebia-test/click-count
-    insecure_registries: ["registry.xebia-test/click-count"]
+      repository: registry.xebia-test:80/click-count
+      insecure_registries: ["registry.xebia-test:80"]
 
 jobs:
 - name: build-war

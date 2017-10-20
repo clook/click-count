@@ -6,7 +6,12 @@ MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
 REGISTRY_PREFIX=registry
+
 MACHINE_IP=192.168.33.10
+BACK_SUBNET=192.168.34.0/28
+BACK_GATEWAY=192.168.34.1
+DNSMASQ_IP=192.168.34.2
+
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VAGRANT_CWD="$DIR"
@@ -39,10 +44,17 @@ create_machine() {
 	vagrant up
 }
 
-launch_dnsmasq() {
+config_dnsmasq() {
 	local machine_ip=$1
+	mkdir -p "$DIR"/dnsmasq
+	sed -e "s@%DOMAIN_NAME%@${DOMAIN_NAME}@;s@%MACHINE_IP%@${machine_ip}@" \
+		-e "s@%DNSMASQ_IP%@${DNSMASQ_IP}@;s@%BACK_SUBNET%@${BACK_SUBNET}@" \
+		-e "s@%BACK_GATEWAY%@${BACK_GATEWAY}@" \
+		"$DIR"/templates/dnsmasq/docker-compose.yml > "$DIR"/dnsmasq/docker-compose.yml
+}
 
-	docker run -d -p 53:53/tcp -p 53:53/udp --cap-add=NET_ADMIN --name dnsmasq andyshinn/dnsmasq:2.76 -A /$DOMAIN_NAME/$machine_ip
+launch_dnsmasq() {
+	( cd "$DIR"/dnsmasq && docker-compose up -d )
 }
 
 launch_traefik() {
@@ -52,7 +64,8 @@ launch_traefik() {
 config_concourse() {
 	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
 	local concourse_url=http://$concourse_host
-	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
+	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
+	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@;s@%DNS_SERVER_IP%@${DNSMASQ_IP}@" \
 		"$DIR"/templates/concourse/docker-compose.yml > "$DIR"/concourse/docker-compose.yml
 
 	docker volume create --name concourse-db
@@ -76,13 +89,6 @@ launch_registry() {
 	docker-compose -f "$DIR"/registry/docker-compose.yml up -d
 }
 
-launch_fly() {
-	docker build -t alpine-fly "$DIR"/fly
-	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
-	dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
-	docker run -it --rm --dns=$dns_server_ip alpine-fly
-}
-
 config_fly() {
 	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
 	local concourse_url=http://$concourse_host
@@ -93,8 +99,7 @@ config_fly() {
 launch_fly() {
 	docker build -t alpine-fly "$DIR"/fly
 	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
-	dns_server_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress }}' dnsmasq)"
-	docker run -it --rm --dns=$dns_server_ip alpine-fly
+	docker run -it --rm --network=dnsmasq_back --dns=${DNSMASQ_IP} alpine-fly
 }
 
 
@@ -104,7 +109,8 @@ main() {
 	if [ "$bootstrap_type" == 'inside' ]; then
 		local machine_ip=$MACHINE_IP
 
-		launch_dnsmasq $machine_ip
+		config_dnsmasq $machine_ip
+		launch_dnsmasq
 		launch_traefik
 		config_concourse
 		launch_concourse
@@ -119,15 +125,15 @@ main() {
 		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 		echo
-		echo 'You can stop and remove everything by cleaning your resolver and'
-		echo "issuing vagrant destroy in the directory $DIR"
-		echo
 	else
 		# bootstrap vagrant
 		check_vagrant
 		check_machine_absent
 		create_machine
 		vagrant ssh -c '/vagrant/bootstrap_infra.sh inside'
+		echo 'You can stop and remove everything by cleaning your resolver and'
+		echo "issuing vagrant destroy in the directory $DIR"
+		echo
 	fi
 }
 
