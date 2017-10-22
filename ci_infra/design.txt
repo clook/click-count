@@ -77,3 +77,15 @@ Don't know if it comes from virtualbox => try Vagrant with docker / docker-compo
 
 
 Bug with Concourse worker: DNS should point to dnsmasq to resolve the registry IP: WIP, branch fix/concourse_dns_registry
+=> FIXED
+
+Trying http://blog.scottlogic.com/2016/06/20/declarative-ci-cd-with-concourse.html for managing Docker swarm from concourse but:
+- the concourse module should be built with the infra set up (OK, we can do it)
+- we should provide certs to it as now (with Docker swarm mode), how to provide them with a concourse module...
+=> better solutions:
+ a) use another CI system than Concourse CI (Drone , Jenkins, Lambda CD?)
+ b) Use Clound Foundry for deployment
+
+With Concourse CI without Cloud Foundry, we are only able to deliver, but not package.
+
+=> trying Drone instead of Concourse, see future dedicated branch...
