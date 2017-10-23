@@ -106,8 +106,11 @@ config_registry() {
 		"$DIR"/templates/registry/docker-compose.yml > "$DIR"/registry/docker-compose.yml
 }
 
+# Launch registry and update docker config
 launch_registry() {
 	docker-compose -f "$DIR"/registry/docker-compose.yml up -d
+	echo "{ \"insecure-registries\":[\"$REGISTRY_PREFIX.$DOMAIN_NAME:80\"] }" | sudo tee >/dev/null /etc/docker/daemon.json
+	sudo systemctl reload docker
 }
 
 config_fly() {
