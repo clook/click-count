@@ -42,9 +42,10 @@ services:
     depends_on: [keys]
     volumes: ['worker-keys:/concourse-keys']
     networks:
-        - concourse
-          # access to DNS resolver
-        - back
+      concourse: {}
+      # access to DNS resolver
+      back:
+        ipv4_address: %DNSNET_WORKER_IP%
     environment:
       CONCOURSE_TSA_HOST: concourse-web
       CONCOURSE_GARDEN_ADDRESS: concourse-worker
