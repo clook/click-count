@@ -17,6 +17,7 @@
         labels:
           traefik.backend: "click-count-{{ env }}"
           traefik.port: "8080"
+          traefik.docker.network: "traefik_webgateway"
           traefik.frontend.rule: "Host:{{ host_name }}.xebia-test"
         state: started
         restart_policy: always
