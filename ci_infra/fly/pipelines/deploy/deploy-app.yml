@@ -16,6 +16,7 @@
         image: "registry.xebia-test:80/click-count:{{ docker_tag }}"
         labels:
           traefik.backend: "click-count-{{ env }}"
+          traefik.port: "8080"
           traefik.frontend.rule: "Host:{{ host_name }}.xebia-test"
         state: started
         restart_policy: always
