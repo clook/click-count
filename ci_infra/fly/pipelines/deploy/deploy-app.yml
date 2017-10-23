@@ -24,3 +24,5 @@
           REDIS_HOST: "{{redis_host}}"
         extra_hosts:
           redis: "{{redis_host}}"
+        networks:
+          - name: "traefik_webgateway"
