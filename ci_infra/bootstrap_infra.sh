@@ -11,6 +11,7 @@ MACHINE_IP=192.168.33.10
 BACK_SUBNET=192.168.34.0/28
 BACK_GATEWAY=192.168.34.1
 DNSMASQ_IP=192.168.34.2
+DNSNET_WORKER_IP=192.168.34.3
 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -46,15 +47,35 @@ create_machine() {
 
 config_dnsmasq() {
 	local machine_ip=$1
+	# Get expected nameserver from lease file to be given to dnsmasq
+	local leases_file=$(ps -A -o cmd | grep -o '/var/lib/dhcp/dhclient\.\w*\.leases')
+	local nameserver_ip=$(grep 'option domain-name-servers ' $leases_file | tail -n 1 | awk '{ print $3 }' | cut -d\; -f1)
+
 	mkdir -p "$DIR"/dnsmasq
+
 	sed -e "s@%DOMAIN_NAME%@${DOMAIN_NAME}@;s@%MACHINE_IP%@${machine_ip}@" \
 		-e "s@%DNSMASQ_IP%@${DNSMASQ_IP}@;s@%BACK_SUBNET%@${BACK_SUBNET}@" \
-		-e "s@%BACK_GATEWAY%@${BACK_GATEWAY}@" \
+		-e "s@%BACK_GATEWAY%@${BACK_GATEWAY}@;s@%NAMESERVER_IP%@${nameserver_ip}@" \
 		"$DIR"/templates/dnsmasq/docker-compose.yml > "$DIR"/dnsmasq/docker-compose.yml
 }
 
 launch_dnsmasq() {
 	( cd "$DIR"/dnsmasq && docker-compose up -d )
+}
+
+# enforce usage of dnsmasq, disable dhclient resolv.conf update
+# => this will keep domain-name-servers unchanged in lease file, as well
+apply_dns_config() {
+	cat << EOF | sudo tee /etc/dhcp/no_resolv_conf_update
+#!/bin/sh
+make_resolv_conf() {
+:
+}
+EOF
+	sudo ln -sf ../no_resolv_conf_update /etc/dhcp/dhclient-enter-hooks.d/
+	# no need to restart, the hook will be taken in account for next lease
+
+	echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
 }
 
 launch_traefik() {
@@ -65,7 +86,8 @@ config_concourse() {
 	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
 	local concourse_url=http://$concourse_host
 	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
-	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@;s@%DNS_SERVER_IP%@${DNSMASQ_IP}@" \
+	sed -e "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
+		-e "s@%DNS_SERVER_IP%@${DNSMASQ_IP}@;s@%DNSNET_WORKER_IP%@${DNSNET_WORKER_IP}@" \
 		"$DIR"/templates/concourse/docker-compose.yml > "$DIR"/concourse/docker-compose.yml
 
 	docker volume create --name concourse-db
@@ -111,11 +133,16 @@ main() {
 
 		config_dnsmasq $machine_ip
 		launch_dnsmasq
+		apply_dns_config
+
 		launch_traefik
+
 		config_concourse
 		launch_concourse
+
 		config_registry
 		launch_registry
+
 		config_fly
 		launch_fly
 
