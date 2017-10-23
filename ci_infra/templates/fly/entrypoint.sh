@@ -7,5 +7,6 @@ fly login -u concourse -p concourse -c %CONCOURSE_URL% -t xebia-test
 
 cd /pipelines
 echo Adding click-count
-fly -t xebia-test set-pipeline -n -p click-count -c click-count.yml
-fly -t xebia-test pause-pipeline --pipeline click-count
+fly -t xebia-test set-pipeline -n -p click-count -c click-count.yml --load-vars-from credentials.yml
+fly -t xebia-test unpause-pipeline --pipeline click-count
+fly -t xebia-test trigger-job --job click-count/build-war --watch

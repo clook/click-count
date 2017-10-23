@@ -1,0 +1,20 @@
+---
+- name: Deploy application using docker
+  hosts: xebia-test
+  remote_user: root
+  become: true
+  tasks:
+    - name: pull docker image
+      docker_image:
+        state: present
+        name: "registry.xebia-test:80/click-count:{{ docker_tag }}"
+        tag: "{{ docker_tag }}"
+
+    - name: run via docker
+      docker_container:
+        name: "click-count-{{ env }}"
+        image: "registry.xebia-test:80/click-count:{{ docker_tag }}"
+        state: started
+        restart_policy: always
+        env:
+          REDIS_HOST: "{{redis_host}}"

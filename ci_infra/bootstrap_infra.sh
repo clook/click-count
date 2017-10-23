@@ -118,6 +118,17 @@ config_fly() {
 		"$DIR"/templates/fly/entrypoint.sh > "$DIR"/fly/entrypoint.sh
 }
 
+# generate SSH key for fly to call docker on root machine
+gen_ssh_fly() {
+	rm -f /tmp/sshkey*
+	ssh-keygen -b 4096 -t rsa -f /tmp/sshkey -q -N ""
+	sudo mkdir -p /root/.ssh
+	sudo cp /tmp/sshkey.pub /root/.ssh/authorized_keys
+	echo "docker-ssh-key: |" > "$DIR"/fly/pipelines/credentials.yml
+	cat /tmp/sshkey | sed 's/^/  /' >> $DIR/fly/pipelines/credentials.yml
+	rm -f /tmp/sshkey*
+}
+
 launch_fly() {
 	docker build -t alpine-fly "$DIR"/fly
 	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
@@ -144,6 +155,7 @@ main() {
 		launch_registry
 
 		config_fly
+		gen_ssh_fly
 		launch_fly
 
 		echo 'Bootstrap ended'

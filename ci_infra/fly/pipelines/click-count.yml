@@ -4,12 +4,14 @@ resources:
   type: git
   source:
     uri: https://github.com/clook/click-count.git
+    branch: swarm_deploy
 
 - name: click-count-image
   type: docker-image
   source:
-      repository: registry.xebia-test:80/click-count
-      insecure_registries: ["registry.xebia-test:80"]
+    repository: registry.xebia-test:80/click-count
+    insecure_registries: ["registry.xebia-test:80"]
+
 
 jobs:
 - name: build-war
@@ -37,3 +39,22 @@ jobs:
   - put: click-count-image
     params:
       build: click-count-war
+  - task: deploy-staging
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "williamyeh/ansible"
+          tag: debian9
+      inputs:
+        - name: click-count-repo
+      run:
+        dir: click-count-repo/ci_infra/fly/pipelines/deploy
+        path: sh
+        args:
+          - -c
+          - "./docker_deploy.sh"
+      params:
+        SSH_KEY: {{docker-ssh-key}}
+        DEPLOY_ENV: staging
