@@ -150,17 +150,17 @@ main() {
 		# Use OpenDNS server to avoid DNS forward loop
 		nameserver_ip=208.67.222.222
 
-		#config_dnsmasq $machine_ip $nameserver_ip
-		#launch_dnsmasq
+		config_dnsmasq $machine_ip $nameserver_ip
+		launch_dnsmasq
 		apply_dns_config $nameserver_ip
 
-		#launch_traefik
+		launch_traefik
 
-		#config_concourse
-		#launch_concourse
+		config_concourse
+		launch_concourse
 
-		#config_registry
-		#launch_registry
+		config_registry
+		launch_registry
 
 		config_fly
 		gen_ssh_fly
@@ -174,9 +174,9 @@ main() {
 		echo
 	else
 		# bootstrap vagrant
-		#check_vagrant
-		#check_machine_absent
-		#create_machine
+		check_vagrant
+		check_machine_absent
+		create_machine
 		vagrant ssh -c '/vagrant/bootstrap_infra.sh inside'
 		echo 'You can stop and remove everything by cleaning your resolver and'
 		echo "issuing vagrant destroy in the directory $DIR"
