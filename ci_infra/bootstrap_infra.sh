@@ -47,9 +47,7 @@ create_machine() {
 
 config_dnsmasq() {
 	local machine_ip=$1
-	# Get expected nameserver from lease file to be given to dnsmasq
-	local leases_file=$(ps -A -o cmd | grep -o '/var/lib/dhcp/dhclient\.\w*\.leases')
-	local nameserver_ip=$(grep 'option domain-name-servers ' $leases_file | tail -n 1 | awk '{ print $3 }' | cut -d\; -f1)
+	local nameserver_ip=$2
 
 	mkdir -p "$DIR"/dnsmasq
 
@@ -66,6 +64,7 @@ launch_dnsmasq() {
 # enforce usage of dnsmasq, disable dhclient resolv.conf update
 # => this will keep domain-name-servers unchanged in lease file, as well
 apply_dns_config() {
+	local nameserver_ip=$1
 	cat << EOF | sudo tee /etc/dhcp/no_resolv_conf_update
 #!/bin/sh
 make_resolv_conf() {
@@ -75,7 +74,7 @@ EOF
 	sudo ln -sf ../no_resolv_conf_update /etc/dhcp/dhclient-enter-hooks.d/
 	# no need to restart, the hook will be taken in account for next lease
 
-	echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+	echo -e "nameserver ${nameserver_ip}\nnameserver 127.0.0.1" | sudo tee /etc/resolv.conf
 }
 
 launch_traefik() {
@@ -142,8 +141,14 @@ main() {
 	if [ "$bootstrap_type" == 'inside' ]; then
 		local machine_ip=$MACHINE_IP
 
-		config_dnsmasq $machine_ip
-		launch_dnsmasq
+		# Get expected nameserver from lease file to be given to dnsmasq
+		#local leases_file=$(ps -A -o cmd | grep -o '/var/lib/dhcp/dhclient\.\w*\.leases')
+		#local nameserver_ip=$(grep 'option domain-name-servers ' $leases_file | tail -n 1 | awk '{ print $3 }' | cut -d\; -f1)
+		# Use OpenDNS server to avoid DNS forward loop
+		nameserver_ip=208.67.222.222
+
+		config_dnsmasq $machine_ip $nameserver_ip
+		launch_dnsmasq $nameserver_ip
 		apply_dns_config
 
 		launch_traefik
