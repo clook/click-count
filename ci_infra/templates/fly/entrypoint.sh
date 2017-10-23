@@ -3,7 +3,9 @@
 TRY_MAX=60
 
 try=0
-while ! curl '%CONCOURSE_URL%/api/v1/cli?arch=amd64&platform=linux' > /usr/local/bin/fly
+
+
+while ! curl -f '%CONCOURSE_URL%/api/v1/cli?arch=amd64&platform=linux' > /usr/local/bin/fly
 do
 	if [[ "$try" -gt "$TRY_MAX" ]]; then
 		echo "Can't download fly"
