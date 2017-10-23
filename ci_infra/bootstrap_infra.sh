@@ -74,7 +74,7 @@ EOF
 	sudo ln -sf ../no_resolv_conf_update /etc/dhcp/dhclient-enter-hooks.d/
 	# no need to restart, the hook will be taken in account for next lease
 
-	echo -e "nameserver ${nameserver_ip}\nnameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+	echo -e "nameserver 127.0.0.1\nnameserver ${nameserver_ip}" | sudo tee /etc/resolv.conf
 }
 
 launch_traefik() {
@@ -144,9 +144,6 @@ main() {
 	if [ "$bootstrap_type" == 'inside' ]; then
 		local machine_ip=$MACHINE_IP
 
-		# Get expected nameserver from lease file to be given to dnsmasq
-		#local leases_file=$(ps -A -o cmd | grep -o '/var/lib/dhcp/dhclient\.\w*\.leases')
-		#local nameserver_ip=$(grep 'option domain-name-servers ' $leases_file | tail -n 1 | awk '{ print $3 }' | cut -d\; -f1)
 		# Use OpenDNS server to avoid DNS forward loop
 		nameserver_ip=208.67.222.222
 
