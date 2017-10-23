@@ -88,4 +88,23 @@ Trying http://blog.scottlogic.com/2016/06/20/declarative-ci-cd-with-concourse.ht
 
 With Concourse CI without Cloud Foundry, we are only able to deliver, but not package.
 
-=> trying Drone instead of Concourse, see future dedicated branch...
+=> finally, going with ssh access to Docker daemon host + ansible to process docker deployments
+
+Improvements:
+- concourse build cache
+- ansible for provisionning infra CI (with dependencies)
+
+
+What is wrong with Concourse?
+- cannot deploy easily with Docker (docker run / docker swarm mode)
+- some options are not really customizable and not well documented, eg using git revision on Docker image push, can't get a subset of it (eg first 6 characters)
+- Garden linux is heavy and slows down the build between each step
+- no convenient way to pass artifacts or variables between jobs / plans (compared to Drone CI where the workspace is shared)
+- can't clean build without deleting the whole pipeline (disk consume)
+
+What is good?
+- Web UI is sexy
+- you can configure accounts and teams with access, really good for QA assessment (but not used)
+
+Other deployment processes: independent of Concourse, tag the images and a "watchdog" update the container with environment due image
+
