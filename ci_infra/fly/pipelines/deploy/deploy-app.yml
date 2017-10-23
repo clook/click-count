@@ -22,3 +22,5 @@
         restart_policy: always
         env:
           REDIS_HOST: "{{redis_host}}"
+        extra_hosts:
+          redis: "{{redis_host}}"
