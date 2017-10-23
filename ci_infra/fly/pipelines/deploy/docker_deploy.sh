@@ -29,6 +29,6 @@ ansible-playbook deploy-app.yml \
 	-e env="${DEPLOY_ENV}" \
 	-e docker_tag="$docker_tag" \
 	-e host_name="$host_name" \
-	-e redis_host="192.168.33.10" \
+	-e redis_host="${REDIS_HOST}" \
 	--private-key ~/.ssh/id_rsa_app \
 	-i hosts/${DEPLOY_ENV} -u root
