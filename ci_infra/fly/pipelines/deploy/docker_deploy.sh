@@ -13,7 +13,7 @@ else
 	exit 1
 fi
 
-if [ "$DEPLOY_ENV" == "prod" ]; then
+if [ "$DEPLOY_ENV" == "production" ]; then
 	host_name=click-count
 else
 	host_name=staging.click-count
