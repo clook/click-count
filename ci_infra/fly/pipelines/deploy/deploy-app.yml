@@ -14,6 +14,9 @@
       docker_container:
         name: "click-count-{{ env }}"
         image: "registry.xebia-test:80/click-count:{{ docker_tag }}"
+        labels:
+          traefik.backend: "click-count-{{ env }}"
+          traefik.frontend.rule: "Host:{{ host_name }}.xebia-test"
         state: started
         restart_policy: always
         env:

@@ -4,7 +4,7 @@ resources:
   type: git
   source:
     uri: https://github.com/clook/click-count.git
-    branch: swarm_deploy
+    branch: test
 
 - name: click-count-image
   type: docker-image
@@ -39,6 +39,7 @@ jobs:
   - put: click-count-image
     params:
       build: click-count-war
+      tag: click-count-repo/.git/ref
   - task: deploy-staging
     config:
       platform: linux
@@ -55,6 +56,7 @@ jobs:
         args:
           - -c
           - "./docker_deploy.sh"
+          - click-count-repo/.git
       params:
         SSH_KEY: {{docker-ssh-key}}
         DEPLOY_ENV: staging
