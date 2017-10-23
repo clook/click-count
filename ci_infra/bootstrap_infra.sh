@@ -6,6 +6,7 @@ MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
 REGISTRY_PREFIX=registry
+APP_NAME=click-count
 
 MACHINE_IP=192.168.33.10
 BACK_SUBNET=192.168.34.0/28
@@ -165,6 +166,8 @@ main() {
 
 		echo 'Bootstrap ended'
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
+		echo "- http://staging.$APP_NAME.$DOMAIN_NAME for staging app"
+		echo "- http://$APP_NAME.$DOMAIN_NAME for production app"
 		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse"
 		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
