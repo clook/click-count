@@ -4,7 +4,7 @@ resources:
   type: git
   source:
     uri: https://github.com/clook/click-count.git
-    branch: test
+    branch: docker-deploy
 
 - name: click-count-image
   type: docker-image
@@ -14,10 +14,11 @@ resources:
 
 
 jobs:
-- name: build-war
+- name: build-image
   public: true
   plan:
   - get: click-count-repo
+    trigger: true
   - task: build-war
     config:
       platform: linux
@@ -40,6 +41,13 @@ jobs:
     params:
       build: click-count-war
       tag: click-count-repo/.git/ref
+
+- name: deploy-staging
+  plan:
+  - get: click-count-repo
+    passed:
+      - build-image
+    trigger: true
   - task: deploy-staging
     config:
       platform: linux
@@ -60,3 +68,30 @@ jobs:
       params:
         SSH_KEY: {{docker-ssh-key}}
         DEPLOY_ENV: staging
+
+- name: deploy-prod
+  plan:
+  - get: click-count-repo
+    passed:
+      - deploy-staging
+    trigger: false
+  - task: deploy-prod
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "williamyeh/ansible"
+          tag: debian9
+      inputs:
+        - name: click-count-repo
+      run:
+        dir: click-count-repo/ci_infra/fly/pipelines/deploy
+        path: sh
+        args:
+          - -c
+          - "./docker_deploy.sh"
+          - click-count-repo/.git
+      params:
+        SSH_KEY: {{docker-ssh-key}}
+        DEPLOY_ENV: production
