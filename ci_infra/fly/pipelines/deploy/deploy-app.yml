@@ -22,7 +22,7 @@
         restart_policy: always
         env:
           REDIS_HOST: "{{redis_host}}"
-        extra_hosts:
+        etc_hosts:
           redis: "{{redis_host}}"
         networks:
           - name: "traefik_webgateway"
