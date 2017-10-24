@@ -1,11 +1,12 @@
 #!/bin/sh
 
 TRY_MAX=60
-
+SLEEP=5
 try=0
 
+url='%CONCOURSE_URL%/api/v1/cli?arch=amd64&platform=linux'
 
-while ! curl -f '%CONCOURSE_URL%/api/v1/cli?arch=amd64&platform=linux' > /usr/local/bin/fly
+while ! curl &>/dev/null -f "$url"
 do
 	if [[ "$try" -gt "$TRY_MAX" ]]; then
 		echo "Can't download fly"
@@ -14,6 +15,11 @@ do
 	try=$((try + 1))
 	sleep 1
 done
+
+echo Waiting $SLEEP additional seconds to prevent race conditions
+sleep $SLEEP
+
+curl -f "$url" > /usr/local/bin/fly
 
 chmod +x /usr/local/bin/fly
 
