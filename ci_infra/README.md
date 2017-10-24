@@ -30,5 +30,9 @@ When deploy-staging is over:
 * you should be able to log and test on http://staging.click-count.xebia-test
 * you may trigger manually the deploy-prod build (click on it and click on the "+" of top right corner)
 
+When deploy-prod is over, you should be able to log and check on http://click-count.xebia-test
+
+Concourse tracks master branch (every minute) so that every push to this branch trigger a new build.
+
 ## Tech and design
 WIP, see design.txt as now.
