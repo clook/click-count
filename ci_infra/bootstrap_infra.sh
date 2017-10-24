@@ -2,24 +2,10 @@
 
 set -e
 
-MACHINE_NAME=xebia-test
-DOMAIN_NAME=xebia-test
-CONCOURSE_PREFIX=concourse
-REGISTRY_PREFIX=registry
-CONSUL_PREFIX=consul
-APP_NAME=click-count
-
-MACHINE_IP=192.168.33.10
-BACK_SUBNET=192.168.34.0/28
-BACK_GATEWAY=192.168.34.1
-DNSMASQ_IP=192.168.34.2
-DNSNET_WORKER_IP=192.168.34.3
-
-# Use OpenDNS server to avoid DNS forward loop
-NAMESERVER_IP=208.67.222.222
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VAGRANT_CWD="$DIR"
+
+source "$DIR"/ci_infra.conf
 
 # check for variant binary and sanity check or die
 check_vagrant() {
@@ -128,31 +114,6 @@ launch_consul() {
 	docker-compose -f "$DIR"/consul/docker-compose.yml up -d
 }
 
-config_fly() {
-	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
-	local concourse_url=http://$concourse_host
-	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
-		"$DIR"/templates/fly/entrypoint.sh > "$DIR"/fly/entrypoint.sh
-}
-
-# generate SSH key for fly to call docker on root machine
-gen_ssh_fly() {
-	rm -f /tmp/sshkey*
-	ssh-keygen -b 4096 -t rsa -f /tmp/sshkey -q -N ""
-	sudo mkdir -p /root/.ssh
-	sudo cp /tmp/sshkey.pub /root/.ssh/authorized_keys
-	echo "docker-ssh-key: |" > "$DIR"/fly/pipelines/credentials.yml
-	cat /tmp/sshkey | sed 's/^/  /' >> $DIR/fly/pipelines/credentials.yml
-	rm -f /tmp/sshkey*
-}
-
-launch_fly() {
-	docker build -t alpine-fly "$DIR"/fly
-	# Can't use the machine_ip as DNS for a container (NAT issue with Docker?)
-	docker run -it --rm --network=dnsmasq_back --dns=${DNSMASQ_IP} alpine-fly
-}
-
-
 main() {
 	local bootstrap_type=$1
 
@@ -174,17 +135,13 @@ main() {
 		config_consul
 		launch_consul
 
-		config_fly
-		gen_ssh_fly
-		launch_fly
-
 		echo 'Bootstrap ended'
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
-		echo "- http://staging.$APP_NAME.$DOMAIN_NAME for staging app"
-		echo "- http://$APP_NAME.$DOMAIN_NAME for production app"
 		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse"
 		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
+		echo
+		echo "Launch "$DIR"/launch_ci.sh to configure and start CI/CD processing"
 		echo
 	else
 		# bootstrap vagrant

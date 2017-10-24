@@ -97,6 +97,7 @@ Improvements:
 
 What is wrong with Concourse?
 - cannot deploy easily with Docker (docker run / docker swarm mode)
+- need a external tool to download from the webapp itself (fly)
 - some options are not really customizable and not well documented, eg using git revision on Docker image push, can't get a subset of it (eg first 6 characters)
 - Garden linux is heavy and slows down the build between each step
 - no convenient way to pass artifacts or variables between jobs / plans (compared to Drone CI where the workspace is shared)
@@ -108,3 +109,6 @@ What is good?
 
 Other deployment processes: independent of Concourse, tag the images and a "watchdog" update the container with environment due image
 
+Splitting process:
+- Infra CI provisionning
+- CI process configuration + launch
