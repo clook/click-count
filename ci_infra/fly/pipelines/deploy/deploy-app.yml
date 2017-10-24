@@ -22,8 +22,7 @@
         state: started
         restart_policy: always
         env:
-          REDIS_HOST: "{{redis_host}}"
-        etc_hosts:
-          redis: "{{redis_host}}"
+          ENVIRONMENT: "{{ env }}"
+          HOST_CONSUL: "{{ host_consul }}"
         networks:
           - name: "traefik_webgateway"

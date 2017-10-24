@@ -36,7 +36,7 @@ jobs:
         path: sh
         args:
           - -c
-          - "mvn clean package && mv target Dockerfile ../click-count-war/"
+          - "mvn clean package && mv target Dockerfile entrypoint.sh ../click-count-war/"
   - put: click-count-image
     params:
       build: click-count-war
@@ -68,6 +68,7 @@ jobs:
       params:
         SSH_KEY: {{docker-ssh-key}}
         DEPLOY_ENV: staging
+        HOST_CONSUL: consul.xebia-test
 
 - name: deploy-prod
   plan:
@@ -95,3 +96,4 @@ jobs:
       params:
         SSH_KEY: {{docker-ssh-key}}
         DEPLOY_ENV: production
+        HOST_CONSUL: consul.xebia-test
