@@ -1,3 +1,3 @@
 #!/bin/bash
 
-envconsul -consul ${HOST_CONSUL} -upcase -prefix click-count-${ENVIRONMENT} catalina.sh run
+envconsul -consul ${CONSUL_HOST} -upcase -prefix click-count-${ENVIRONMENT} catalina.sh run

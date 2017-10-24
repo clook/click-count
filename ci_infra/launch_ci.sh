@@ -53,8 +53,8 @@ gen_ssh_fly() {
 store_redis_ips() {
 	local consul_host=$CONSUL_PREFIX.$DOMAIN_NAME
 	
-	curl -X PUT -d "$REDIS_STAGING_HOST" http://${consul_host}/v1/kv/click-count-staging/host_redis
-	curl -X PUT -d "$REDIS_PRODUCTION_HOST" http://${consul_host}/v1/kv/click-count-production/host_redis
+	curl -X PUT -d "$REDIS_HOST_STAGING" http://${consul_host}/v1/kv/click-count-staging/redis_host
+	curl -X PUT -d "$REDIS_HOST_PRODUCTION" http://${consul_host}/v1/kv/click-count-production/redis_host
 }
 
 launch_fly() {

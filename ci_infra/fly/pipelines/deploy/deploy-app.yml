@@ -23,6 +23,6 @@
         restart_policy: always
         env:
           ENVIRONMENT: "{{ env }}"
-          HOST_CONSUL: "{{ host_consul }}"
+          CONSUL_HOST: "{{ consul_host }}"
         networks:
           - name: "traefik_webgateway"

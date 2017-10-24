@@ -14,11 +14,11 @@ public class Configuration {
     public final int redisConnectionTimeout;  //milliseconds
 
     public Configuration() {
-		String envHost = System.getenv("HOST_REDIS");
+		String envHost = System.getenv("REDIS_REDIS");
 		redisHost = (envHost != null && !envHost.isEmpty())  ? envHost : "redis";
 		log.info(">> Redis host: " + redisHost);
 
-		String envPort = System.getenv("PORT_REDIS");
+		String envPort = System.getenv("REDIS_PORT");
 		redisPort = (envPort != null && !envPort.isEmpty())  ? Integer.valueOf(envPort) : 6379;
 		log.info(">> Redis port: " + redisPort);
 
