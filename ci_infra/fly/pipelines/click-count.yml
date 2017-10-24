@@ -4,7 +4,7 @@ resources:
   type: git
   source:
     uri: https://github.com/clook/click-count.git
-    branch: docker-deploy
+    branch: master
 
 - name: click-count-image
   type: docker-image
