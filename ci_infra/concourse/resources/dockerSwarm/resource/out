@@ -1,0 +1,43 @@
+#!/bin/sh -u
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+buffer=$(cat)
+
+# TODO:
+# add label for traefik, at least for master process
+
+#Extract variables from json
+serviceName=$(echo $buffer | jq -r '.source.serviceName')
+repository=$(echo $buffer | jq -r '.source.repository')
+portNumber=$(echo $buffer | jq -r '.source.portNumber')
+network=$(echo $buffer | jq -r '.source.network')
+swarmMaster=$(echo $buffer | jq -r '.source.swarmMaster')
+
+export DOCKER_HOST="${swarmMaster}"
+
+echo --- SERVICE INFO ---
+echo serviceName: ${serviceName}
+echo repository: ${repository}
+echo portNumber: ${portNumber}
+echo network: ${network}
+echo swarmMaster: ${swarmMaster}
+echo DOCKER_HOST: ${DOCKER_HOST}
+echo --- END ---
+
+set -v
+
+docker version
+
+docker pull ${repository}
+
+docker service rm ${serviceName} || true
+
+docker service create \
+	--name=${serviceName} \
+	--network=${network} \
+	${repository}
+		
+
+echo '{ "version": { "ref": "'$BUILD_ID'" } }' >&3

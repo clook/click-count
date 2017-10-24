@@ -6,6 +6,7 @@ MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
 REGISTRY_PREFIX=registry
+APP_NAME=click-count
 
 MACHINE_IP=192.168.33.10
 BACK_SUBNET=192.168.34.0/28
@@ -47,9 +48,7 @@ create_machine() {
 
 config_dnsmasq() {
 	local machine_ip=$1
-	# Get expected nameserver from lease file to be given to dnsmasq
-	local leases_file=$(ps -A -o cmd | grep -o '/var/lib/dhcp/dhclient\.\w*\.leases')
-	local nameserver_ip=$(grep 'option domain-name-servers ' $leases_file | tail -n 1 | awk '{ print $3 }' | cut -d\; -f1)
+	local nameserver_ip=$2
 
 	mkdir -p "$DIR"/dnsmasq
 
@@ -66,6 +65,7 @@ launch_dnsmasq() {
 # enforce usage of dnsmasq, disable dhclient resolv.conf update
 # => this will keep domain-name-servers unchanged in lease file, as well
 apply_dns_config() {
+	local nameserver_ip=$1
 	cat << EOF | sudo tee /etc/dhcp/no_resolv_conf_update
 #!/bin/sh
 make_resolv_conf() {
@@ -75,7 +75,7 @@ EOF
 	sudo ln -sf ../no_resolv_conf_update /etc/dhcp/dhclient-enter-hooks.d/
 	# no need to restart, the hook will be taken in account for next lease
 
-	echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+	echo -e "nameserver 127.0.0.1\nnameserver ${nameserver_ip}" | sudo tee /etc/resolv.conf
 }
 
 launch_traefik() {
@@ -107,8 +107,11 @@ config_registry() {
 		"$DIR"/templates/registry/docker-compose.yml > "$DIR"/registry/docker-compose.yml
 }
 
+# Launch registry and update docker config
 launch_registry() {
 	docker-compose -f "$DIR"/registry/docker-compose.yml up -d
+	echo "{ \"insecure-registries\":[\"$REGISTRY_PREFIX.$DOMAIN_NAME:80\"] }" | sudo tee >/dev/null /etc/docker/daemon.json
+	sudo systemctl reload docker
 }
 
 config_fly() {
@@ -116,6 +119,17 @@ config_fly() {
 	local concourse_url=http://$concourse_host
 	sed "s@%CONCOURSE_HOST%@${concourse_host}@;s@%CONCOURSE_URL%@${concourse_url}@" \
 		"$DIR"/templates/fly/entrypoint.sh > "$DIR"/fly/entrypoint.sh
+}
+
+# generate SSH key for fly to call docker on root machine
+gen_ssh_fly() {
+	rm -f /tmp/sshkey*
+	ssh-keygen -b 4096 -t rsa -f /tmp/sshkey -q -N ""
+	sudo mkdir -p /root/.ssh
+	sudo cp /tmp/sshkey.pub /root/.ssh/authorized_keys
+	echo "docker-ssh-key: |" > "$DIR"/fly/pipelines/credentials.yml
+	cat /tmp/sshkey | sed 's/^/  /' >> $DIR/fly/pipelines/credentials.yml
+	rm -f /tmp/sshkey*
 }
 
 launch_fly() {
@@ -131,9 +145,12 @@ main() {
 	if [ "$bootstrap_type" == 'inside' ]; then
 		local machine_ip=$MACHINE_IP
 
-		config_dnsmasq $machine_ip
+		# Use OpenDNS server to avoid DNS forward loop
+		nameserver_ip=208.67.222.222
+
+		config_dnsmasq $machine_ip $nameserver_ip
 		launch_dnsmasq
-		apply_dns_config
+		apply_dns_config $nameserver_ip
 
 		launch_traefik
 
@@ -144,10 +161,13 @@ main() {
 		launch_registry
 
 		config_fly
+		gen_ssh_fly
 		launch_fly
 
 		echo 'Bootstrap ended'
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
+		echo "- http://staging.$APP_NAME.$DOMAIN_NAME for staging app"
+		echo "- http://$APP_NAME.$DOMAIN_NAME for production app"
 		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse"
 		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"

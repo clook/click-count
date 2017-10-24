@@ -77,3 +77,34 @@ Don't know if it comes from virtualbox => try Vagrant with docker / docker-compo
 
 
 Bug with Concourse worker: DNS should point to dnsmasq to resolve the registry IP: WIP, branch fix/concourse_dns_registry
+=> FIXED
+
+Trying http://blog.scottlogic.com/2016/06/20/declarative-ci-cd-with-concourse.html for managing Docker swarm from concourse but:
+- the concourse module should be built with the infra set up (OK, we can do it)
+- we should provide certs to it as now (with Docker swarm mode), how to provide them with a concourse module...
+=> better solutions:
+ a) use another CI system than Concourse CI (Drone , Jenkins, Lambda CD?)
+ b) Use Clound Foundry for deployment
+
+With Concourse CI without Cloud Foundry, we are only able to deliver, but not package.
+
+=> finally, going with ssh access to Docker daemon host + ansible to process docker deployments
+
+Improvements:
+- concourse build cache
+- ansible for provisionning infra CI (with dependencies)
+
+
+What is wrong with Concourse?
+- cannot deploy easily with Docker (docker run / docker swarm mode)
+- some options are not really customizable and not well documented, eg using git revision on Docker image push, can't get a subset of it (eg first 6 characters)
+- Garden linux is heavy and slows down the build between each step
+- no convenient way to pass artifacts or variables between jobs / plans (compared to Drone CI where the workspace is shared)
+- can't clean build without deleting the whole pipeline (disk consume)
+
+What is good?
+- Web UI is sexy
+- you can configure accounts and teams with access, really good for QA assessment (but not used)
+
+Other deployment processes: independent of Concourse, tag the images and a "watchdog" update the container with environment due image
+
