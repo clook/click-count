@@ -12,6 +12,7 @@ public class Configuration {
     public Configuration() {
 		String envHost = System.getenv("HOST_REDIS");
 		redisHost = (envHost != null && !envHost.isEmpty())  ? envHost : "redis";
+		System.out.println("Redis server: " + redisHost);
 
 		String envPort = System.getenv("PORT_REDIS");
 		redisPort = (envPort != null && !envPort.isEmpty())  ? Integer.valueOf(envPort) : 6379;
