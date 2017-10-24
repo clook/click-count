@@ -14,6 +14,8 @@ BACK_GATEWAY=192.168.34.1
 DNSMASQ_IP=192.168.34.2
 DNSNET_WORKER_IP=192.168.34.3
 
+# Use OpenDNS server to avoid DNS forward loop
+NAMESERVER_IP=208.67.222.222
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VAGRANT_CWD="$DIR"
@@ -48,13 +50,12 @@ create_machine() {
 
 config_dnsmasq() {
 	local machine_ip=$1
-	local nameserver_ip=$2
 
 	mkdir -p "$DIR"/dnsmasq
 
 	sed -e "s@%DOMAIN_NAME%@${DOMAIN_NAME}@;s@%MACHINE_IP%@${machine_ip}@" \
 		-e "s@%DNSMASQ_IP%@${DNSMASQ_IP}@;s@%BACK_SUBNET%@${BACK_SUBNET}@" \
-		-e "s@%BACK_GATEWAY%@${BACK_GATEWAY}@;s@%NAMESERVER_IP%@${nameserver_ip}@" \
+		-e "s@%BACK_GATEWAY%@${BACK_GATEWAY}@;s@%NAMESERVER_IP%@${NAMESERVER_IP}@" \
 		"$DIR"/templates/dnsmasq/docker-compose.yml > "$DIR"/dnsmasq/docker-compose.yml
 }
 
@@ -65,7 +66,6 @@ launch_dnsmasq() {
 # enforce usage of dnsmasq, disable dhclient resolv.conf update
 # => this will keep domain-name-servers unchanged in lease file, as well
 apply_dns_config() {
-	local nameserver_ip=$1
 	cat << EOF | sudo tee /etc/dhcp/no_resolv_conf_update
 #!/bin/sh
 make_resolv_conf() {
@@ -75,7 +75,7 @@ EOF
 	sudo ln -sf ../no_resolv_conf_update /etc/dhcp/dhclient-enter-hooks.d/
 	# no need to restart, the hook will be taken in account for next lease
 
-	echo -e "nameserver 127.0.0.1\nnameserver ${nameserver_ip}" | sudo tee /etc/resolv.conf
+	echo -e "nameserver 127.0.0.1\nnameserver ${NAMESERVER_IP}" | sudo tee /etc/resolv.conf
 }
 
 launch_traefik() {
@@ -145,12 +145,9 @@ main() {
 	if [ "$bootstrap_type" == 'inside' ]; then
 		local machine_ip=$MACHINE_IP
 
-		# Use OpenDNS server to avoid DNS forward loop
-		nameserver_ip=208.67.222.222
-
-		config_dnsmasq $machine_ip $nameserver_ip
+		config_dnsmasq $machine_ip
 		launch_dnsmasq
-		apply_dns_config $nameserver_ip
+		apply_dns_config
 
 		launch_traefik
 
