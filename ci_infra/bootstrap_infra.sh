@@ -136,12 +136,15 @@ main() {
 		launch_consul
 
 		echo 'Bootstrap ended'
+		echo
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
-		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse"
+		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse (main login concourse/concourse)"
 		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
+		echo "- http://$CONSUL_PREFIX.$DOMAIN_NAME for consul"
 		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 		echo
-		echo "Launch "$DIR"/launch_ci.sh to configure and start CI/CD processing"
+		echo "Fill Redis IPs in click-count.ci.conf and"
+		echo "run launch_ci.sh to configure and trigger CI/CD processing"
 		echo
 	else
 		# bootstrap vagrant

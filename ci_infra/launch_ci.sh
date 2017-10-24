@@ -78,8 +78,16 @@ main() {
 		echo 'CI click-count ended'
 		echo
 		echo "Please now use $machine_ip as nameserver and try to connect to:"
+		echo "- http://$CONCOURSE_PREFIX.$DOMAIN_NAME for concourse (main login concourse/concourse)"
+		echo "- http://$REGISTRY_PREFIX.$DOMAIN_NAME for registry"
+		echo "- http://$CONSUL_PREFIX.$DOMAIN_NAME for consul"
+		echo "- http://$DOMAIN_NAME:8080 for traefik dashboard"
 		echo "- http://staging.$APP_NAME.$DOMAIN_NAME for staging app (when built)"
 		echo "- http://$APP_NAME.$DOMAIN_NAME for production app (when built)"
+		echo
+		echo "You can configure Redis IP with consul REST API:"
+		echo "  curl -X PUT -d <REDIS_STAGING_HOST> http://${consul_host}/v1/kv/click-count-staging/redis_host"
+		echo "  curl -X PUT -d <REDIS_PROD_HOST> http://${consul_host}/v1/kv/click-count-production/redis_host"
 		echo
 	else
 		# check vagrant
