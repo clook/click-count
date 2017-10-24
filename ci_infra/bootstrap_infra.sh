@@ -6,6 +6,7 @@ MACHINE_NAME=xebia-test
 DOMAIN_NAME=xebia-test
 CONCOURSE_PREFIX=concourse
 REGISTRY_PREFIX=registry
+CONSUL_PREFIX=consul
 APP_NAME=click-count
 
 MACHINE_IP=192.168.33.10
@@ -114,6 +115,19 @@ launch_registry() {
 	sudo systemctl reload docker
 }
 
+config_consul() {
+	local consul_host=$CONSUL_PREFIX.$DOMAIN_NAME
+
+	mkdir -p "$DIR"/consul
+	sed "s@%CONSUL_HOST%@${consul_host}@" \
+		"$DIR"/templates/consul/docker-compose.yml > "$DIR"/consul/docker-compose.yml
+}
+
+# Launch consul
+launch_consul() {
+	docker-compose -f "$DIR"/consul/docker-compose.yml up -d
+}
+
 config_fly() {
 	local concourse_host=$CONCOURSE_PREFIX.$DOMAIN_NAME
 	local concourse_url=http://$concourse_host
@@ -156,6 +170,9 @@ main() {
 
 		config_registry
 		launch_registry
+
+		config_consul
+		launch_consul
 
 		config_fly
 		gen_ssh_fly
