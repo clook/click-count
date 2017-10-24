@@ -2,11 +2,13 @@
 
 ## How to use it?
 ### Prerequesties
-You must have full access to:
-* Docker Hub (HTTPS)
-* OpenDNS services (208.67.222.222 DNS)
-* Xebia Redis external hosts (TCP/6379)
-* your DNS resolver configuration
+You must have:
+* at least 10-12 GB available on your disk
+* Vagrant installed on your machine and bash shell
+* access to HTTP/HTTPS Internet (Docker Hub, Vagrant, Debian APT repo, Python PIP packages...)
+* access to DNS services (208.67.222.222 DNS)
+* access Xebia Redis external hosts (TCP/6379)
+* a way to configure your DNS resolver configuration
 
 ### Usage
 * clone the project and bootstrap CI infra:
@@ -24,7 +26,7 @@ cd click-count/ci_infra
 
 You should be able to track the progress by logging on http://concourse.xebia-test with team main:
 * login: concourse
-* login: concourse
+* password: concourse
 
 When deploy-staging is over:
 * you should be able to log and test on http://staging.click-count.xebia-test
